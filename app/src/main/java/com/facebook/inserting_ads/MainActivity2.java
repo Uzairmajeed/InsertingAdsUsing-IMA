@@ -4,6 +4,7 @@ package com.facebook.inserting_ads;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,11 +38,22 @@ public class MainActivity2 extends AppCompatActivity {
      * IMA sample tag for a single skippable inline video ad. See more IMA sample tags at
      * https://developers.google.com/interactive-media-ads/docs/sdks/html5/client-side/tags
      */
-    private static final String SAMPLE_VAST_TAG_URL =
+
+    /**
+     * List of ad tag URLs for a playlist of skippable inline video ads.
+     */
+    private static final String[] SAMPLE_VAST_TAG_URL= {
             "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/"
                     + "single_preroll_skippable&sz=640x480&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast"
-                    + "&unviewed_position_start=1&env=vp&impl=s&correlator=";
+                    + "&unviewed_position_start=1&env=vp&impl=s&correlator=",
 
+            "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/" +
+                    "single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&" +
+                    "output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+
+            // Add more ad tag URLs as needed
+    };
+    private int currentAdIndex = 0;
     // Factory class for creating SDK objects.
     private ImaSdkFactory sdkFactory;
 
@@ -92,8 +104,15 @@ public class MainActivity2 extends AppCompatActivity {
         playButton.setOnClickListener(
                 view -> {
                     videoPlayer.setVideoPath(SAMPLE_VIDEO_URL);
-                    requestAds(SAMPLE_VAST_TAG_URL);
+                    // Request the first ad in the playlist
+                    requestAds(SAMPLE_VAST_TAG_URL[currentAdIndex]);
                     view.setVisibility(View.GONE);
+                    // Introduce a delay of 40 seconds before the main video starts
+                    Handler delayHandler = new Handler();
+                    delayHandler.postDelayed(() -> {
+                        watchOnProgress();
+                    }, 40000); // 40 seconds delay
+
                 });
 
         // Add listeners for when ads are loaded and for errors.
@@ -168,6 +187,13 @@ public class MainActivity2 extends AppCompatActivity {
                     }
                 });
 
+    }
+
+    // Add the watchOnProgress method
+    private void watchOnProgress() {
+            // Play the next ad in the playlist
+            currentAdIndex = (currentAdIndex + 1) % SAMPLE_VAST_TAG_URL.length;
+            requestAds(SAMPLE_VAST_TAG_URL[currentAdIndex]);
     }
 
     private void pauseContentForAds() {
